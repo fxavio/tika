@@ -11,6 +11,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,7 +23,10 @@ public class TikaApplication {
         Path path = Paths.get(filePath);
 
         try (InputStream stream = Files.newInputStream(path)) {
-            BodyContentHandler handler = new BodyContentHandler();
+
+            //BodyContentHandler handler = new BodyContentHandler(100000000);
+            StringWriter any = new StringWriter();
+            BodyContentHandler handler = new BodyContentHandler(any);
             AutoDetectParser parser = new AutoDetectParser();
             Metadata metadata = new Metadata();
             ParseContext parseContext = new ParseContext();
@@ -51,11 +55,13 @@ public class TikaApplication {
 //        parseFileWithTika("sample.txt");
 //        parseFileWithTika("test.txt");
 //        parseFileWithTika("9781107038929_frontmatter.pdf");
+          parseFileWithTika("test.pdf");
+//        parseFileWithTika("test.doc");
 //        parseFileWithTika("sample.docx");
 //        parseFileWithTika("test.doc");
 //        parseFileWithTika("sample.xlsx");
 //        parseFileWithTika("sample.ppt");
-        parseFileWithTika("unique-passenger-counts-over-100-by-NZ-port-and-citizenship-year-ended-june-2020.csv");
+//        parseFileWithTika("unique-passenger-counts-over-100-by-NZ-port-and-citizenship-year-ended-june-2020.csv");
 //        parseFileWithTika("sample.sql");
 //        parseFileWithTika("sample.java");
 //        parseFileWithTika("sample.py");
