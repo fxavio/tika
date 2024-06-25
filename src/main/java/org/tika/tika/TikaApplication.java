@@ -12,6 +12,8 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,15 +25,12 @@ public class TikaApplication {
         Path path = Paths.get(filePath);
 
         try (InputStream stream = Files.newInputStream(path)) {
-
-            //BodyContentHandler handler = new BodyContentHandler(100000000);
             StringWriter any = new StringWriter();
             BodyContentHandler handler = new BodyContentHandler(any);
             AutoDetectParser parser = new AutoDetectParser();
             Metadata metadata = new Metadata();
             ParseContext parseContext = new ParseContext();
 
-            // Explicitly setting the parser context for TXT files
             parseContext.set(org.apache.tika.parser.Parser.class, parser);
 
             parser.parse(stream, handler, metadata, parseContext);
@@ -49,32 +48,49 @@ public class TikaApplication {
         }
     }
 
+    public static void parseFileFromURL(String fileURL) {
+        try (InputStream stream = getFileInputStreamFromURL(fileURL)) {
+            StringWriter any = new StringWriter();
+            BodyContentHandler handler = new BodyContentHandler(any);
+            AutoDetectParser parser = new AutoDetectParser();
+            Metadata metadata = new Metadata();
+            ParseContext parseContext = new ParseContext();
+
+            parseContext.set(org.apache.tika.parser.Parser.class, parser);
+
+            parser.parse(stream, handler, metadata, parseContext);
+
+            String content = handler.toString();
+            System.out.println("File content: " + "\n" + content + "\n\n");
+        } catch (IOException e) {
+            System.err.println("Error reading file from URL: " + e.getMessage());
+        } catch (TikaException e) {
+            System.err.println("Error parsing file from URL: " + e.getMessage());
+        } catch (SAXException e) {
+            System.err.println("Error processing file from URL: " + e.getMessage());
+        }
+    }
+
+    public static InputStream getFileInputStreamFromURL(String fileURL) throws IOException {
+        URL url = new URL(fileURL);
+        HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+        int responseCode = httpConn.getResponseCode();
+
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            return httpConn.getInputStream();
+        } else {
+            throw new IOException("Failed to fetch file from URL. Server replied with HTTP code: " + responseCode);
+        }
+    }
+
     public static void main(String[] args) {
         SpringApplication.run(TikaApplication.class, args);
 
-//        parseFileWithTika("sample.txt");
-//        parseFileWithTika("test.txt");
-//        parseFileWithTika("9781107038929_frontmatter.pdf");
-          parseFileWithTika("test.pdf");
-//        parseFileWithTika("test.doc");
-//        parseFileWithTika("sample.docx");
-//        parseFileWithTika("test.doc");
-//        parseFileWithTika("sample.xlsx");
-//        parseFileWithTika("sample.ppt");
-//        parseFileWithTika("unique-passenger-counts-over-100-by-NZ-port-and-citizenship-year-ended-june-2020.csv");
-//        parseFileWithTika("sample.sql");
-//        parseFileWithTika("sample.java");
-//        parseFileWithTika("sample.py");
-//        parseFileWithTika("sample.c");
-//        parseFileWithTika("sample.cpp");
-//        parseFileWithTika("sample.cs");
-//        parseFileWithTika("sample.js");
-//        parseFileWithTika("sample.css");
-//        parseFileWithTika("sample.html");
-//        parseFileWithTika("sample.json");
-//        parseFileWithTika("sample.rb");
-//        parseFileWithTika("sample.php");
-//        parseFileWithTika("sample.go");
-//        parseFileWithTika("sample.yaml");
+        // Parse a file from the local filesystem
+        parseFileWithTika("test.pdf");
+
+        // Parse a file directly from a URL
+//        parseFileFromURL("https://res.cloudinary.com/rxavio/raw/upload/v1719332301/Sample-SQL-File-1000-Rows_m1koev.sql");
+        parseFileFromURL("https://res.cloudinary.com/rxavio/image/upload/v1719332051/PHP_and_MySQL.doc_ibpqkz.pdf");
     }
 }
